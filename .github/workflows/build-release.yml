@@ -43,7 +43,7 @@ jobs:
         if: steps.check_tag.outputs.build_required == 'true'
         uses: actions/setup-python@v5
         with:
-            python-version: '3.11'
+            python-version: '3.13'
         
       - name: Clone upstream repo at tag
         if: steps.check_tag.outputs.build_required == 'true'
