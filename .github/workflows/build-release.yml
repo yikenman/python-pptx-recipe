@@ -7,7 +7,7 @@ on:
 
 env:
   UPSTREAM_REPO_OWNER: "pyodide"  
-  UPSTREAM_REPO: "pyodide/pyodide-recipe"
+  UPSTREAM_REPO: "pyodide/pyodide-recipes"
   WORK_DIR: "upstream-dir"
 
 jobs:
