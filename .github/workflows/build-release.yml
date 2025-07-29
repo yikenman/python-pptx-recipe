@@ -61,18 +61,13 @@ jobs:
             git apply "$p"
           done
 
-      - name: Prepare env
+      - name: Prepare env & Build recipes
         if: steps.check_tag.outputs.build_required == 'true'
         run: |
             cd ${{ env.WORK_DIR }}
             pip install ./pyodide-build
             python ./tools/install_and_patch_emscripten.py
             source emsdk/emsdk_env.sh
-
-      - name: Build recipes
-        if: steps.check_tag.outputs.build_required == 'true'
-        run: |
-            cd ${{ env.WORK_DIR }}
             pyodide build-recipes "python-pptx" --recipe-dir ./packages --install
 
     #   - name: Modify multiple fields via JS
