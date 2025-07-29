@@ -1,0 +1,68 @@
+From 306e00f999501c1a72dd7b418c1cb9ce03380367 Mon Sep 17 00:00:00 2001
+From: yikenman <17548672+yikenman@users.noreply.github.com>
+Date: Tue, 29 Jul 2025 10:10:18 +0800
+Subject: [PATCH] add python-pptx & xlsxwriter
+
+---
+ packages/python-pptx/meta.yaml | 24 ++++++++++++++++++++++++
+ packages/xlsxwriter/meta.yaml  | 16 ++++++++++++++++
+ 2 files changed, 40 insertions(+)
+ create mode 100644 packages/python-pptx/meta.yaml
+ create mode 100644 packages/xlsxwriter/meta.yaml
+
+diff --git a/packages/python-pptx/meta.yaml b/packages/python-pptx/meta.yaml
+new file mode 100644
+index 0000000..ec321f7
+--- /dev/null
++++ b/packages/python-pptx/meta.yaml
+@@ -0,0 +1,24 @@
++package:
++  name: python-pptx
++  version: 1.0.2
++  top-level:
++    - pptx
++source:
++  url: https://files.pythonhosted.org/packages/py3/p/python_pptx/python_pptx-1.0.2-py3-none-any.whl
++  sha256: 160838e0b8565a8b1f67947675886e9fea18aa5e795db7ae531606d68e785cba
++
++requirements:
++  run:
++    - lxml
++    - Pillow
++    - xlsxwriter
++
++about:
++  home: https://github.com/scanny/python-pptx
++  PyPI: https://pypi.org/project/python-pptx
++  summary: Create, read, and update PowerPoint 2007+ (.pptx) files.
++  license: MIT
++
++extra:
++  recipe-maintainers:
++    - yikenman
+\ No newline at end of file
+diff --git a/packages/xlsxwriter/meta.yaml b/packages/xlsxwriter/meta.yaml
+new file mode 100644
+index 0000000..2b847a2
+--- /dev/null
++++ b/packages/xlsxwriter/meta.yaml
+@@ -0,0 +1,16 @@
++package:
++  name: xlsxwriter
++  version: 3.2.5
++  top-level:
++    - xlsxwriter
++source:
++  url: https://files.pythonhosted.org/packages/py3/x/xlsxwriter/xlsxwriter-3.2.5-py3-none-any.whl
++  sha256: 4f4824234e1eaf9d95df9a8fe974585ff91d0f5e3d3f12ace5b71e443c1c6abd
++about:
++  home: https://github.com/jmcnamara/XlsxWriter
++  PyPI: https://pypi.org/project/xlsxwriter
++  summary: A Python module for creating Excel XLSX files.
++  license: BSD-2-Clause
++extra:
++  recipe-maintainers:
++    - yikenman
+-- 
+2.39.5 (Apple Git-154)
+

@@ -1,0 +1,110 @@
+name: Build from Upstream with Patch
+
+on:
+#   schedule:
+#     - cron: '0 3 * * *' 
+  workflow_dispatch:
+
+env:
+  UPSTREAM_REPO: "pyodide/pyodide-recipe"
+  WORK_DIR: "upstream-dir"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout controller repo (this repo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch latest upstream tag
+        id: fetch
+        run: |
+          tag=$(curl -s https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/tags | jq -r '.[0].name')
+          echo "latest_tag=$tag" >> $GITHUB_OUTPUT
+
+      - name: Check if tag has already been built
+        id: check_tag
+        run: |
+          if git ls-remote --tags origin "refs/tags/${{ steps.fetch.outputs.latest_tag }}" | grep -q .; then
+            echo "Tag already built. Skipping."
+            echo "build_required=false" >> $GITHUB_OUTPUT
+          else
+            echo "build_required=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Python
+        if: steps.check_tag.outputs.build_required == 'true'
+        uses: actions/setup-python@v5
+        with:
+            python-version: '3.11'
+        
+      - name: Clone upstream repo at tag
+        if: steps.check_tag.outputs.build_required == 'true'
+        run: |
+          git clone --recursive --branch ${{ steps.fetch.outputs.latest_tag }} https://github.com/${{ env.UPSTREAM_REPO }}.git ${{ env.WORK_DIR }}
+
+      - name: Apply patch
+        if: steps.check_tag.outputs.build_required == 'true'
+        run: |
+          cd ${{ env.WORK_DIR }}
+          git config user.name "builder"
+          git config user.email "builder@gh"
+          for p in ../patches/*.patch; do
+            echo "Applying patch $p"
+            git apply "$p"
+          done
+
+      - name: Prepare env
+        if: steps.check_tag.outputs.build_required == 'true'
+        run: |
+            cd ${{ env.WORK_DIR }}
+            pip install ./pyodide-build
+            python ./tools/install_and_patch_emscripten.py
+            source emsdk/emsdk_env.sh
+
+      - name: Build recipes
+        if: steps.check_tag.outputs.build_required == 'true'
+        run: |
+            cd ${{ env.WORK_DIR }}
+            pyodide build-recipes "python-pptx" --recipe-dir ./packages --install
+
+    #   - name: Modify multiple fields via JS
+    #     run: |
+    #         node -e '
+    #         const fs = require("fs");
+    #         const f = "build-output/pyodide-lock.json";
+    #         const d = JSON.parse(fs.readFileSync(f, "utf8"));
+
+    #         d["mypackage"].meta.description = "My Custom Desc";
+    #         d["mypackage"].meta.version = "v0.1.1";
+
+    #         fs.writeFileSync(f, JSON.stringify(d, null, 2));
+    #         '
+
+      - name: Compress output
+        if: steps.check_tag.outputs.build_required == 'true'
+        run: |
+          cd ${{ env.WORK_DIR }}/dist
+          ls -la
+          tar -czf ../../output-${{ steps.fetch.outputs.latest_tag }}.tar.gz .
+
+    #   - name: Create and push tag
+    #     if: steps.check_tag.outputs.build_required == 'true'
+    #     run: |
+    #       git tag ${{ steps.fetch.outputs.latest_tag }}
+    #       git push origin ${{ steps.fetch.outputs.latest_tag }}
+    #     env:
+    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release
+        if: steps.check_tag.outputs.build_required == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.fetch.outputs.latest_tag }}
+          files: |
+            output-${{ steps.fetch.outputs.latest_tag }}.tar.gz
+            ${{ env.WORK_DIR }}/dist/*.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
