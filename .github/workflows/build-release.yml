@@ -22,10 +22,12 @@ jobs:
       - name: Fetch latest upstream tag
         id: fetch
         run: |
-            tag=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            tag=$(curl -s -H "Authorization: Bearer ${{ env.GITHUB_TOKEN }}" \
             -X POST -d '{"query":"query { repository(owner: \"${{ env.UPSTREAM_REPO_OWNER }}\", name: \"${{ env.UPSTREAM_REPO }}\") { refs(refPrefix: \"refs/tags/\", first: 1, orderBy: {field: TAG_COMMIT_DATE, direction: DESC}) { nodes { name }}}}"}' \
             https://api.github.com/graphql | jq -r '.data.repository.refs.nodes[0].name')
             echo "latest_tag=$tag" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if tag has already been built
         id: check_tag
