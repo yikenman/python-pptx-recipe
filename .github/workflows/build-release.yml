@@ -22,12 +22,10 @@ jobs:
       - name: Fetch latest upstream tag
         id: fetch
         run: |
-            tag=$(curl -s -H "Authorization: Bearer ${{ env.GITHUB_TOKEN }}" \
+            tag=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -X POST -d '{"query":"query { repository(owner: \"${{ env.UPSTREAM_REPO_OWNER }}\", name: \"${{ env.UPSTREAM_REPO_NAME }}\") { refs(refPrefix: \"refs/tags/\", first: 1, orderBy: {field: TAG_COMMIT_DATE, direction: DESC}) { nodes { name }}}}"}' \
             https://api.github.com/graphql | jq -r '.data.repository.refs.nodes[0].name')
             echo "latest_tag=$tag" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if tag has already been built
         id: check_tag
@@ -70,33 +68,45 @@ jobs:
             source emsdk/emsdk_env.sh
             pyodide build-recipes "python-pptx" --recipe-dir ./packages --install
 
-    #   - name: Modify multiple fields via JS
-    #     run: |
-    #         node -e '
-    #         const fs = require("fs");
-    #         const f = "build-output/pyodide-lock.json";
-    #         const d = JSON.parse(fs.readFileSync(f, "utf8"));
+      - name: Filter pyodide-lock.json and cleanup dist files
+        run: |
+          cd "${{ env.WORK_DIR }}/dist"
 
-    #         d["mypackage"].meta.description = "My Custom Desc";
-    #         d["mypackage"].meta.version = "v0.1.1";
+          TARGET="python-pptx"
+          LOCK_FILE="pyodide-lock.json"
 
-    #         fs.writeFileSync(f, JSON.stringify(d, null, 2));
-    #         '
+          jq -r --arg target "$TARGET" '
+            def walk_deps($pkgs; $acc):
+              if ($pkgs[$acc[-1]] | has("depends")) and ($pkgs[$acc[-1]].depends | length > 0)
+              then
+                reduce ($pkgs[$acc[-1]].depends[]) as $d (
+                  $acc;
+                  if $acc | index($d) then . else walk_deps($pkgs; . + [$d]) end
+                )
+              else $acc
+              end;
+            .packages as $pkgs |
+            ($pkgs[$target]? | if . then walk_deps($pkgs; [$target]) else [] end) as $keep |
+            .packages |= with_entries(select(.key as $k | $keep | index($k)))
+          ' "$LOCK_FILE" > __filtered__.json && mv __filtered__.json "$LOCK_FILE"
+
+          FILES=$(jq -r '.packages[].file_name' "$LOCK_FILE")
+          FILES="$FILES pyodide-lock.json"
+
+          for f in *; do
+            if ! echo "$FILES" | grep -qxF "$f"; then
+              echo "Deleting $f"
+              rm -rf -- "$f"
+            fi
+          done
+        shell: bash
 
       - name: Compress output
         if: steps.check_tag.outputs.build_required == 'true'
         run: |
           cd ${{ env.WORK_DIR }}/dist
           ls -la
-          tar -czf ../../output-${{ steps.fetch.outputs.latest_tag }}.tar.gz .
-
-    #   - name: Create and push tag
-    #     if: steps.check_tag.outputs.build_required == 'true'
-    #     run: |
-    #       git tag ${{ steps.fetch.outputs.latest_tag }}
-    #       git push origin ${{ steps.fetch.outputs.latest_tag }}
-    #     env:
-    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tar -czf ../../packages.tar.gz .
 
       - name: Upload Release
         if: steps.check_tag.outputs.build_required == 'true'
