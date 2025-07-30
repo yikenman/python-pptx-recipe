@@ -1,8 +1,8 @@
 name: Build from Upstream with Patch
 
 on:
-#   schedule:
-#     - cron: '0 3 * * *' 
+  schedule:
+    - cron: '0 3 * * *' 
   workflow_dispatch:
 
 env:
@@ -115,7 +115,7 @@ jobs:
         with:
           tag_name: ${{ steps.fetch.outputs.latest_tag }}
           files: |
-            output-${{ steps.fetch.outputs.latest_tag }}.tar.gz
+            packages.tar.gz
             ${{ env.WORK_DIR }}/dist/*.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
