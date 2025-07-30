@@ -88,10 +88,11 @@ jobs:
             .packages as $pkgs |
             ($pkgs[$target]? | if . then walk_deps($pkgs; [$target]) else [] end) as $keep |
             .packages |= with_entries(select(.key as $k | $keep | index($k)))
-          ' "$LOCK_FILE" > __filtered__.json && mv __filtered__.json "$LOCK_FILE"
+          ' "$LOCK_FILE" > __filtered__.json
 
-          FILES=$(jq -r '.packages[].file_name' "$LOCK_FILE")
-          FILES="$FILES pyodide-lock.json"
+          mv __filtered__.json "$LOCK_FILE"
+
+          FILES=$(jq -r '.packages[].file_name' "$LOCK_FILE"; printf '%s\n' pyodide-lock.json)
 
           for f in *; do
             if ! echo "$FILES" | grep -qxF "$f"; then
@@ -105,7 +106,7 @@ jobs:
         if: steps.check_tag.outputs.build_required == 'true'
         run: |
           cd ${{ env.WORK_DIR }}/dist
-          ls -la
+          ls -lh
           tar -czf ../../packages.tar.gz .
 
       - name: Upload Release
