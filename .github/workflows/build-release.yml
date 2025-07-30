@@ -69,6 +69,7 @@ jobs:
             pyodide build-recipes "python-pptx" --recipe-dir ./packages --install
 
       - name: Filter pyodide-lock.json and cleanup dist files
+        if: steps.check_tag.outputs.build_required == 'true'
         run: |
           cd "${{ env.WORK_DIR }}/dist"
 
