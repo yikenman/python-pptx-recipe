@@ -89,7 +89,7 @@ jobs:
             .packages as $pkgs |
             ($pkgs[$target]? | if . then walk_deps($pkgs; [$target]) else [] end) as $keep |
             .packages |= with_entries(select(.key as $k | $keep | index($k)))
-          ' "$LOCK_FILE" > __filtered__.json
+          ' "$LOCK_FILE" | jq -c '.' > __filtered__.json
 
           mv __filtered__.json "$LOCK_FILE"
 
