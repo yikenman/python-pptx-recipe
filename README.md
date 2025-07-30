@@ -1,4 +1,4 @@
 # python-pptx-recipe
 
-Customized [`pyodide`](https://github.com/pyodide/pyodide) [package recipes](https://github.com/pyodide/pyodide-recipes) for [`python-pptx`](https://github.com/scanny/python-pptx) only.
+Customized [package recipes](https://github.com/pyodide/pyodide-recipes) of [`pyodide`](https://github.com/pyodide/pyodide) for [`python-pptx-wasm`](https://github.com/yikenman/python-pptx-wasm) only.
 
